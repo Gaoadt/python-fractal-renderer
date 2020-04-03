@@ -88,6 +88,9 @@ class MultiplyExpr(AssociativeBinaryExpr):
 class SumExpr(AssociativeBinaryExpr):
     symbol = "+"
 
+class PowerExpr(BinaryExpr):
+    symbol = "^"
+    priority = 2
 
 class SubtractExpr(BinaryExpr):
     symbol = "-"
@@ -159,7 +162,7 @@ class UnexpectedSymbolException(InvalidExpressionException):
 class DefaultExpressionProcessor(IExpressionProcessor):
     
     unaryOperations = [UnaryPlus(), UnaryMinus()]
-    binaryOperations = [SumExpr(), DivideExpr(), MultiplyExpr(), SubtractExpr()]
+    binaryOperations = [SumExpr(), DivideExpr(), MultiplyExpr(), SubtractExpr(), PowerExpr()]
 
     def __currentCharacter(self):
         return self.__expressionWithoutSpaces[self.__index]
@@ -234,7 +237,7 @@ class DefaultExpressionProcessor(IExpressionProcessor):
             if self.__isNextBracketInfixExpr():
                 return deepcopy(MultiplyExpr()).setArgs(bracketsCutResult, self.__getInfixExpression())
             
-            if not self.__isOver():
+            if not self.__isSubexprEnd():
                 if not self.__isBinaryOperatorNext():
                     return deepcopy(MultiplyExpr()).setArgs(bracketsCutResult, self.__getInfixExpression())
             return bracketsCutResult
@@ -344,6 +347,7 @@ class DefaultExpressionProcessor(IExpressionProcessor):
             return False
 
 
-#string = input()
-#processor = DefaultExpressionProcessor()
-#print(processor.getParsedExpression(string).print())
+if __name__ == '__main__':
+    string = input()
+    processor = DefaultExpressionProcessor()
+    print(processor.getParsedExpression(string).print())
