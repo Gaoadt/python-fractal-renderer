@@ -1,163 +1,13 @@
 from abc import abstractclassmethod
 from copy import copy, deepcopy
+from expression_exceptions import *
+from expression_types import *
 import sys
+
 class IExpressionProcessor:
     @abstractclassmethod
     def getParsedExpression(self, expressionString):
         pass
-
-class IExpression:
-    @abstractclassmethod
-    def getNiceString(self):
-        pass
-
-class ExpressionOperator:
-    def __init__(self, symbolString, valence = 1):
-        self.symbolString = symbolString
-        self.valence = valence
-
-class Expression(IExpression):
-    symbol =''
-    valence = 0
-
-    def setArgs(self, *args):
-        for i in range(self.valence):
-            self.args[i] = args[i]
-        self.needsSubLinking = False
-        return self
-
-    def print(self):
-        return f"{self.symbol}({','.join([x.print() for x in self.args])})"
-    
-    @abstractclassmethod
-    def getNiceString(self):
-        pass
-
-    def __deepcopy__(self, memo={}):
-        new = self.__class__()
-        new.__dict__.update(self.__dict__)
-        new.args = deepcopy(self.args, memo)
-        return new
-
-class BinaryExpr(Expression):
-    valence = 2
-    args = [None, None]
-    priority = 0
-    needsSubLinking = False
-
-    def getNiceString(self):
-        str1 = self.args[0].getNiceString()
-        if(self.args[0].priority < self.priority):
-            str1 = f"({str1})"
-        
-        str2 = self.args[1].getNiceString()
-        if(self.args[1].priority <= self.priority):
-            str2 = f"({str2})"
-
-        return f"{str1} {self.symbol} {str2}"
-
-class AssociativeBinaryExpr(BinaryExpr):
-    def getNiceString(self):
-        str1 = self.args[0].getNiceString()
-        if(self.args[0].priority <= self.priority):
-            if(type(self.args[0]) != type(self)):
-                str1 = f"({str1})"
-        
-        str2 = self.args[1].getNiceString()
-        if(self.args[1].priority <= self.priority):
-            if(type(self.args[1]) != type(self)):
-                str2 = f"({str2})"
-
-        return f"{str1} {self.symbol} {str2}"
-
-class UnaryExpr(Expression):
-    valence = 1
-    args = [None]
-    needsSubLinking = False
-    def setArg(self, value):
-        self.args[0] = value
-        return self
-    def getNiceString(self):
-        return f"{self.symbol}{self.args[0].getNiceString()}"
-
-class MultiplyExpr(AssociativeBinaryExpr):
-    symbol = "*"
-    priority = 1
-
-
-class SumExpr(AssociativeBinaryExpr):
-    symbol = "+"
-
-class PowerExpr(BinaryExpr):
-    symbol = "^"
-    priority = 2
-
-class SubtractExpr(BinaryExpr):
-    symbol = "-"
-
-class DivideExpr(BinaryExpr):
-    symbol = "/"
-    priority = 1
-
-
-class ConstantExpr(Expression):
-    valence = 0
-    args = []
-    priority = 100
-    needsSubLinking = False
-    def __init__(self, value):
-        self.value = value
-    def print(self):
-        return str(self.value)
-    def getNiceString(self):
-        return str(self.value)
-
-class NamedVarExpr(Expression):
-    valence = 0
-    needsSubLinking = False
-    priority = 100
-    args = []
-    def __init__(self, identifierName):
-        self.identifierName = identifierName
-    def print(self):
-        return self.identifierName
-    def getNiceString(self):
-        return self.identifierName
-
-class UnaryMinus(UnaryExpr):
-    priority = 50
-    symbol = "-"
-
-class UnaryPlus(UnaryExpr):
-    priority = 50
-    symbol = '+'
-
-
-
-class InvalidExpressionException(Exception):
-    def __init(self, message):
-        super.__init__(message)
-
-class EmptyExpressionException(InvalidExpressionException):
-    def __init__(self, index):
-        super(EmptyExpressionException,self).__init__(f"Expected non-empty expression here at {index}")
-
-class UnfinishedExpressionException(InvalidExpressionException):
-    def __init__(self, index):
-        super(UnfinishedExpressionException,self).__init__(f"Expected expression at {index}")
-
-class InvalidConstantException(InvalidExpressionException):
-    def __init__(self, index):
-        super(InvalidConstantException,self).__init__(f"Expected valid constant at {index}")
-
-class InvalidBracketsException(InvalidExpressionException):
-    def __init__(self, index):
-        super(InvalidBracketsException,self).__init__(f"Expected closing bracket ar {index}")
-
-class UnexpectedSymbolException(InvalidExpressionException):
-    def __init__(self, index):
-        super(UnexpectedSymbolException,self).__init__(f"Unexpected symbol at {index}")
-
 
 class DefaultExpressionProcessor(IExpressionProcessor):
     
@@ -294,7 +144,7 @@ class DefaultExpressionProcessor(IExpressionProcessor):
         self.__subListIndex += 1
         if currentExpression.needsSubLinking:
             for i in range(currentExpression.valence):
-                currentExpression.args[currentExpression.valence - 1 - i] = self.__subLinkList(subResult)
+                currentExpression.args[currentExpression.valence - 1 - i].link = self.__subLinkList(subResult)
             currentExpression.needsSubLinking = False
         return currentExpression
 

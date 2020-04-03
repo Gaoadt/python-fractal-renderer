@@ -77,4 +77,6 @@ class MainWindow:
 
         self.main_frame.pack()
         self.root.mainloop()
-MainWindow()
+
+if __name__ == '__main__':
+    MainWindow()
