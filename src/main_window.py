@@ -25,6 +25,7 @@ class MainWindow:
         formulaStr = self.formula_string_var.get()
         if(proc.isParseable(formulaStr)):
             self.formula_entry.config(foreground = 'black')
+            self.formula_string_var.set(proc.getParsedExpression(formulaStr).getNiceString())
         else:
             self.formula_entry.config(foreground = 'tomato')        
 
@@ -34,7 +35,7 @@ class MainWindow:
         self.main_frame = tk.Frame(self.root)
         
         self.main_label = tk.Label(self.main_frame, text = "Enter formula and parameters")
-        self.main_label.grid(columnspan = 2)
+        self.main_label.grid(columnspan = 6)
         
         self.iterations_label = tk.Label(self.main_frame, text =  "Number of iterations:")
         self.iterations_label.grid(row = 1, column = 0)
@@ -46,33 +47,33 @@ class MainWindow:
 
 
         self.radius_label = tk.Label(self.main_frame, text =  "Radius of divergence:")
-        self.radius_label.grid(row = 2, column = 0)
+        self.radius_label.grid(row = 1, column = 2)
         self.radius_string_var = tk.StringVar()
         self.radius_string_var.set(2.0)
         self.radius_entry = tk.Entry(self.main_frame, textvariable = self.radius_string_var)
-        self.radius_entry.grid(row = 2, column = 1)
+        self.radius_entry.grid(row = 1, column = 3)
         self.radius_entry.bind("<FocusOut>", self.__radius_changed_callback)
         
 
         self.formula_label = tk.Label(self.main_frame, text =  "Iteration formula: x'(x) = ")
-        self.formula_label.grid(row = 3, column = 0)
+        self.formula_label.grid(row = 2, column = 0)
         self.formula_string_var = tk.StringVar()
         self.formula_string_var.set("x * x + pos")
-        self.formula_entry = tk.Entry(self.main_frame, textvariable = self.formula_string_var)
-        self.formula_entry.grid(row = 3, column = 1)
-        self.radius_entry.bind("<FocusOut>", self.__formula_changed_callback)
-        self.radius_entry.bind("<FocusIn>", self.__formula_changed_callback)
+        self.formula_entry = tk.Entry(self.main_frame, textvariable = self.formula_string_var, width = 100)
+        self.formula_entry.grid(row = 2, column = 1, columnspan = 6)
+        self.formula_entry.bind("<FocusOut>", self.__formula_changed_callback)
+        self.formula_entry.bind("<FocusIn>", self.__formula_changed_callback)
 
         self.name_label = tk.Label(self.main_frame, text =  "Fractal's name")
-        self.name_label.grid(row = 4, column = 0)
+        self.name_label.grid(row = 1, column = 5)
         self.name_string_var = tk.StringVar()
         self.name_string_var.set("Some fractal")
         self.name_entry = tk.Entry(self.main_frame, textvariable = self.name_string_var)
-        self.name_entry.grid(row = 4, column = 1)
+        self.name_entry.grid(row = 1, column = 6)
 
 
         self.render_button = tk.Button(self.main_frame, text = "Render")
-        self.render_button.grid(row = 5, columnspan = 2)
+        self.render_button.grid(row = 4, columnspan = 6)
 
         self.main_frame.pack()
         self.root.mainloop()

@@ -16,9 +16,10 @@ class ExpressionOperator:
         self.symbolString = symbolString
         self.valence = valence
 
-class Expression:
+class Expression(IExpression):
     symbol =''
-    
+    valence = 0
+
     def setArgs(self, *args):
         for i in range(self.valence):
             self.args[i] = args[i]
@@ -28,6 +29,10 @@ class Expression:
     def print(self):
         return f"{self.symbol}({','.join([x.print() for x in self.args])})"
     
+    @abstractclassmethod
+    def getNiceString(self):
+        pass
+
     def __deepcopy__(self, memo={}):
         new = self.__class__()
         new.__dict__.update(self.__dict__)
@@ -40,6 +45,31 @@ class BinaryExpr(Expression):
     priority = 0
     needsSubLinking = False
 
+    def getNiceString(self):
+        str1 = self.args[0].getNiceString()
+        if(self.args[0].priority < self.priority):
+            str1 = f"({str1})"
+        
+        str2 = self.args[1].getNiceString()
+        if(self.args[1].priority <= self.priority):
+            str2 = f"({str2})"
+
+        return f"{str1} {self.symbol} {str2}"
+
+class AssociativeBinaryExpr(BinaryExpr):
+    def getNiceString(self):
+        str1 = self.args[0].getNiceString()
+        if(self.args[0].priority <= self.priority):
+            if(type(self.args[0]) != type(self)):
+                str1 = f"({str1})"
+        
+        str2 = self.args[1].getNiceString()
+        if(self.args[1].priority <= self.priority):
+            if(type(self.args[1]) != type(self)):
+                str2 = f"({str2})"
+
+        return f"{str1} {self.symbol} {str2}"
+
 class UnaryExpr(Expression):
     valence = 1
     args = [None]
@@ -47,13 +77,17 @@ class UnaryExpr(Expression):
     def setArg(self, value):
         self.args[0] = value
         return self
+    def getNiceString(self):
+        return f"{self.symbol}{self.args[0].getNiceString()}"
 
-class MultiplyExpr(BinaryExpr):
+class MultiplyExpr(AssociativeBinaryExpr):
     symbol = "*"
     priority = 1
 
-class SumExpr(BinaryExpr):
+
+class SumExpr(AssociativeBinaryExpr):
     symbol = "+"
+
 
 class SubtractExpr(BinaryExpr):
     symbol = "-"
@@ -66,25 +100,33 @@ class DivideExpr(BinaryExpr):
 class ConstantExpr(Expression):
     valence = 0
     args = []
+    priority = 100
     needsSubLinking = False
     def __init__(self, value):
         self.value = value
     def print(self):
         return str(self.value)
+    def getNiceString(self):
+        return str(self.value)
 
 class NamedVarExpr(Expression):
     valence = 0
     needsSubLinking = False
+    priority = 100
     args = []
     def __init__(self, identifierName):
         self.identifierName = identifierName
     def print(self):
         return self.identifierName
+    def getNiceString(self):
+        return self.identifierName
 
 class UnaryMinus(UnaryExpr):
+    priority = 50
     symbol = "-"
 
 class UnaryPlus(UnaryExpr):
+    priority = 50
     symbol = '+'
 
 
@@ -108,6 +150,11 @@ class InvalidConstantException(InvalidExpressionException):
 class InvalidBracketsException(InvalidExpressionException):
     def __init__(self, index):
         super(InvalidBracketsException,self).__init__(f"Expected closing bracket ar {index}")
+
+class UnexpectedSymbolException(InvalidExpressionException):
+    def __init__(self, index):
+        super(UnexpectedSymbolException,self).__init__(f"Unexpected symbol at {index}")
+
 
 class DefaultExpressionProcessor(IExpressionProcessor):
     
@@ -284,7 +331,10 @@ class DefaultExpressionProcessor(IExpressionProcessor):
         self.__expressionWithoutSpaces = ''.join(expressionString.split(' '))
         self.__index = 0
         self.__expLen = len(self.__expressionWithoutSpaces)
-        return self.__getValidExpression()
+        expression = self.__getValidExpression()
+        if not self.__isOver():
+            raise UnexpectedSymbolException(self.__index)
+        return expression
     
     def isParseable(self, string):
         try:
