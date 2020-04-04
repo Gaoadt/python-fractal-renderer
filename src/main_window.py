@@ -1,33 +1,45 @@
 import tkinter as tk
 from expression_processor import DefaultExpressionProcessor
-
-proc = DefaultExpressionProcessor()
+from expression_types import Expression
+from fractal_data import FractalData
+from fractal import Fractal
+from fractal_settings_window import FractalSettingWindow
 
 class MainWindow:
+    fractal_data = FractalData()
 
-    def __iterations_changed_callback(self, event):
-        iterationsStr = self.iterations_string_var.get()
-        try:
-            int(iterationsStr)
-            self.iterations_entry.config(foreground = 'black')
-            
-        except ValueError:
-            self.iterations_entry.config(foreground = 'tomato')
-    def __radius_changed_callback(self, event):
-        radiusStr = self.radius_string_var.get()
-        try:
-            float(radiusStr)
-            self.radius_entry.config(foreground = 'black')
-            
-        except ValueError:
-            self.radius_entry.config(foreground = 'tomato')
-    def __formula_changed_callback(self, event):
-        formulaStr = self.formula_string_var.get()
-        if(proc.isParseable(formulaStr)):
-            self.formula_entry.config(foreground = 'black')
-            self.formula_string_var.set(proc.getParsedExpression(formulaStr).getNiceString())
+    def __setFieldForeground(self, field, valid):
+        if valid:
+            field.config(foreground = 'black')
         else:
-            self.formula_entry.config(foreground = 'tomato')        
+            field.config(foreground = 'tomato')
+
+    def __dataChangedQuickCallback(self, *args):
+        self.fractal_data.setFormula(self.formula_string_var.get())
+        self.fractal_data.setRadius(self.radius_string_var.get())
+        self.fractal_data.setIterations(self.iterations_string_var.get())
+
+        self.__setFieldForeground(self.formula_entry, self.fractal_data.isExpressionValid())
+        self.__setFieldForeground(self.radius_entry, self.fractal_data.isRadiusValid())
+        self.__setFieldForeground(self.iterations_entry, self.fractal_data.isIterationsValid())
+
+        if self.fractal_data.isValid():
+            self.render_button.config(state = "normal")
+        else:
+            self.render_button.config(state = "disabled")
+    def __dataChangedCallback(self, *args):
+        self.__dataChangedQuickCallback(*args)
+        if(self.fractal_data.isExpressionValid()):
+            self.formula_string_var.set(self.fractal_data.getExpression().getNiceString())
+    
+    def __renderButtonCallback(self, *args):
+        self.__dataChangedCallback()
+        if not self.fractal_data.isValid():
+            return
+        
+        fractal = Fractal(self.fractal_data.getExpression(), self.fractal_data.getRadius(), self.fractal_data.getIterations())
+        settings = FractalSettingWindow(self.root, fractal)
+        
 
     def __init__(self):
         self.root = tk.Tk()
@@ -43,8 +55,8 @@ class MainWindow:
         self.iterations_string_var.set(100)
         self.iterations_entry = tk.Entry(self.main_frame, textvariable = self.iterations_string_var)
         self.iterations_entry.grid(row = 1, column = 1)
-        self.iterations_entry.bind("<FocusOut>", self.__iterations_changed_callback)
-
+        self.iterations_entry.bind("<FocusOut>", self.__dataChangedCallback)
+        self.iterations_entry.bind("<FocusIn>", self.__dataChangedCallback)
 
         self.radius_label = tk.Label(self.main_frame, text =  "Radius of divergence:")
         self.radius_label.grid(row = 1, column = 2)
@@ -52,7 +64,8 @@ class MainWindow:
         self.radius_string_var.set(2.0)
         self.radius_entry = tk.Entry(self.main_frame, textvariable = self.radius_string_var)
         self.radius_entry.grid(row = 1, column = 3)
-        self.radius_entry.bind("<FocusOut>", self.__radius_changed_callback)
+        self.radius_entry.bind("<FocusOut>", self.__dataChangedCallback)
+        self.radius_entry.bind("<FocusIn>", self.__dataChangedCallback)
         
 
         self.formula_label = tk.Label(self.main_frame, text =  "Iteration formula: x'(x) = ")
@@ -61,8 +74,9 @@ class MainWindow:
         self.formula_string_var.set("x * x + pos")
         self.formula_entry = tk.Entry(self.main_frame, textvariable = self.formula_string_var, width = 100)
         self.formula_entry.grid(row = 2, column = 1, columnspan = 6)
-        self.formula_entry.bind("<FocusOut>", self.__formula_changed_callback)
-        self.formula_entry.bind("<FocusIn>", self.__formula_changed_callback)
+        self.formula_entry.bind("<FocusOut>", self.__dataChangedCallback)
+        self.formula_entry.bind("<FocusIn>", self.__dataChangedCallback)
+        self.formula_string_var.trace_add("write", self.__dataChangedQuickCallback)
 
         self.name_label = tk.Label(self.main_frame, text =  "Fractal's name")
         self.name_label.grid(row = 1, column = 5)
@@ -70,12 +84,16 @@ class MainWindow:
         self.name_string_var.set("Some fractal")
         self.name_entry = tk.Entry(self.main_frame, textvariable = self.name_string_var)
         self.name_entry.grid(row = 1, column = 6)
+        self.name_entry.bind("<FocusOut>", self.__dataChangedCallback)
+        self.name_entry.bind("<FocusIn>", self.__dataChangedCallback)
 
 
         self.render_button = tk.Button(self.main_frame, text = "Render")
         self.render_button.grid(row = 4, columnspan = 6)
-
+        self.render_button.bind("<Button-1>", self.__renderButtonCallback)
+        
         self.main_frame.pack()
+        self.root.resizable(False, False)
         self.root.mainloop()
 
 if __name__ == '__main__':
