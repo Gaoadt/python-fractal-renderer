@@ -4,6 +4,7 @@ from expression_exceptions import *
 from expression_types import *
 import sys
 
+
 class IExpressionProcessor:
     @abstractclassmethod
     def getParsedExpression(self, expressionString):

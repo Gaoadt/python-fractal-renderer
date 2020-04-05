@@ -91,10 +91,11 @@ class MainWindow:
         self.render_button = tk.Button(self.main_frame, text = "Render")
         self.render_button.grid(row = 4, columnspan = 6)
         self.render_button.bind("<Button-1>", self.__renderButtonCallback)
-        
         self.main_frame.pack()
         self.root.resizable(False, False)
         self.root.mainloop()
+
+
 
 if __name__ == '__main__':
     MainWindow()
