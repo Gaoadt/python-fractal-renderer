@@ -6,7 +6,7 @@ class FractalSettings:
         self.center = (0,0)
         self.scale = 4.0
         self.vars = {x : 0.0 for x in range(varcount)}
-
+        
 class FractalSettingWindow:
 
     def tkinterKeyPressedCallback(self, event):
@@ -48,6 +48,9 @@ class FractalSettingWindow:
         self.viewportCenterImagVar.set(str(self.params.center[1]))
         self.viewportCenterRealVar.set(str(self.params.center[0]))
         self.viewportScaleVar.set(str(self.params.scale))
+        
+        for index, var  in self.identVars.items():
+            var.set(self.params.vars[index])
 
     def __tryCastVal(self, stringVar, default, caster):
         try:
@@ -59,10 +62,14 @@ class FractalSettingWindow:
         self.params.center = (self.__tryCastVal(self.viewportCenterRealVar, self.params.center[0], float), self.params.center[1])
         self.params.center = (self.params.center[0], self.__tryCastVal(self.viewportCenterImagVar, self.params.center[1], float))
         self.params.scale = self.__tryCastVal(self.viewportScaleVar, self.params.scale, float)
+
+        for index, var  in self.identVars.items():
+            self.params.vars[index]  = self.__tryCastVal(var, self.params.vars[index], float)
+
         self.__settingExternalCallback()
 
     def __init__(self, root, fractal):
-        self.params = FractalSettings(10)
+        self.params = FractalSettings(len(fractal.identifiers))
         self.fractal = fractal
         
         self.window = tk.Toplevel(root)

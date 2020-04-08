@@ -13,11 +13,14 @@ class PyFractalDivergenceCalculator:
         self.iteration = iterationFractal
         self.iters = fractal.iterations
         self.radius = fractal.radius
+        
+    def setVars(self, vars):
+        self.vars = copy(vars)
 
     def getDivergence(self, pos):
         val = 0 + 0j
         for i in range(self.iters):
-            val = self.iteration(val, pos)
+            val = self.iteration(val, pos, self.vars)
             if abs(val) > self.radius:
                 return i
         return -1
@@ -98,7 +101,8 @@ class PyFractalWindow:
         colorProvider.width = self.size[0]
         colorProvider.height = self.size[1]
         colorProvider.posToComplex = self.getLocator()
-
+        colorProvider.calculator.setVars(self.settingsView.params.vars) 
+        
         self.buffers = self.buffers[1], self.buffers[0]
         self.buffers[0].render(colorProvider)
         self.buffers[1].setVisibility(False)

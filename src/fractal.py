@@ -15,7 +15,6 @@ class Fractal:
         self.iterations = iterations
         
         self.buildIdentifierDictionary()
-        print(self.identifiers)
 
     def dfsIdentifierFinder(self, nodeLink):
         expression = nodeLink.link

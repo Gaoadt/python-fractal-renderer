@@ -18,7 +18,7 @@ class PyFractalSourceGenerator:
 
     def getName(self, expr):
         if isinstance(expr, NamedVarExpr):
-            return f"name_{self.fractal.identifiers[expr.identifierName]}"
+            return f"name[{self.fractal.identifiers[expr.identifierName]}]"
         if isinstance(expr, SpecialVarExpr):
             return expr.identifierName
         if isinstance(expr, ConstantExpr):
@@ -43,7 +43,7 @@ class PyFractalSourceGenerator:
 
     def generateSource(self, fractal):
         self.fractal = fractal
-        self.addToSource("def iterationFractal(x, pos):")
+        self.addToSource("def iterationFractal(x, pos, name):")
         self.addMargin()
         for operation in fractal.postOrder:
             self.addOperation(operation.link)   
