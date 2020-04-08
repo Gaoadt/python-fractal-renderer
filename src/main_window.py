@@ -5,6 +5,7 @@ from fractal_data import FractalData
 from fractal import Fractal
 from fractal_settings_window import FractalSettingWindow
 from py_fractal_renderer import PyFractalRenderer
+from gl_fractal_renderer import GLFractalRenderer
 import sys
 import os
 import threading
@@ -58,7 +59,16 @@ class MainWindow:
         fractal = Fractal(self.fractal_data.getExpression(), self.fractal_data.getRadius(), self.fractal_data.getIterations())
         self.renderer = PyFractalRenderer(self.root, fractal)
         self.renderer.runDrawThread()
-        
+    
+    def __renderButtonGLCallback(self, *args):
+        self.__dataChangedCallback()
+        if not self.fractal_data.isValid():
+            return
+
+        self.__killSubwindows()
+        fractal = Fractal(self.fractal_data.getExpression(), self.fractal_data.getRadius(), self.fractal_data.getIterations())
+        self.renderer = GLFractalRenderer(self.root, fractal)
+
 
     def __init__(self):
         self.root = tk.Tk()
@@ -107,9 +117,14 @@ class MainWindow:
         self.name_entry.bind("<FocusIn>", self.__dataChangedCallback)
 
 
-        self.render_button = tk.Button(self.main_frame, text = "Render")
+        self.render_button = tk.Button(self.main_frame, text = "Render Python")
         self.render_button.grid(row = 4, columnspan = 6)
         self.render_button.bind("<Button-1>", self.__renderButtonCallback)
+
+        self.render_buttongl = tk.Button(self.main_frame, text = "Render OpenGL")
+        self.render_buttongl.grid(row = 5, columnspan = 6)
+        self.render_buttongl.bind("<Button-1>", self.__renderButtonGLCallback)
+      
         self.main_frame.pack()
         self.root.resizable(False, False)
         self.root.bind("<Destroy>", self.__exit)

@@ -14,6 +14,7 @@ class PyFractalDivergenceCalculator:
         self.iteration = iterationFractal
         self.iters = fractal.iterations
         self.radius = fractal.radius
+        self.time = 0.0
         
     def setVars(self, vars):
         self.vars = copy(vars)
@@ -21,7 +22,7 @@ class PyFractalDivergenceCalculator:
     def getDivergence(self, pos):
         val = 0 + 0j
         for i in range(self.iters):
-            val = self.iteration(val, pos, self.vars, self.time )
+            val = self.iteration(val, pos, self.vars, self.time)
             if abs(val) > self.radius:
                 return i
         return -1
@@ -50,7 +51,7 @@ class PyFractalWindowBuffer:
     def render(self, colorProvider):
         self.canvas.delete(self.id)
         self.image = Image.new("RGBA", (colorProvider.width, colorProvider.height), "white")
-        self.draw = ImageDraw.Draw(self.image)  
+        self.draw = ImageDraw.Draw(self.image) 
         for i in range(colorProvider.width):
             for j in range(colorProvider.height):
                 self.draw.point((i,j), colorProvider.getColor((i,j))) 
@@ -70,7 +71,7 @@ class PyFractalWindow:
     size = (200,200)
     def __init__(self, root, settingsView):
         self.settingsView = settingsView
-        #self.initTime = time.time()
+        self.initTime = time.time()
         self.window = tk.Toplevel(root)
         self.window.title("Py Fractal Renderer")
         self.canvas = tk.Canvas(self.window,width=self.size[0], height=self.size[1], bg = 'black')
@@ -106,7 +107,7 @@ class PyFractalWindow:
         colorProvider.height = self.size[1]
         colorProvider.posToComplex = self.getLocator()
         colorProvider.calculator.setVars(self.settingsView.params.vars) 
-     #   colorProvider.time = float(time.time() - self.initTime)
+        colorProvider.calculator.time = float(time.time()) - float(self.initTime)
 
         self.buffers = self.buffers[1], self.buffers[0]
         self.buffers[0].render(colorProvider)
@@ -169,7 +170,7 @@ class PyFractalRenderer:
 
 if __name__ == '__main__':
     proc = DefaultExpressionProcessor()
-    fractal = Fractal(proc.getParsedExpression("x * x * x + pos"), 2.0, 100)
+    fractal = Fractal(proc.getParsedExpression("x * x * x + pos + time"), 2.0, 100)
      
     root = tk.Tk()
     renderer = PyFractalRenderer(root,fractal)

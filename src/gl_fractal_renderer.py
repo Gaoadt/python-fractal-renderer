@@ -57,9 +57,9 @@ class GLFractalWindow:
         wh = glutGet(GLUT_WINDOW_WIDTH) * 1.0 / glutGet(GLUT_WINDOW_HEIGHT)
         
         ctime = float(time.time()) - float(self.initTime)
-        glUniformMatrix2fv(0, 1, False, [ctime, 0.0, 0.0, ctime])
+        glUniformMatrix2fv(self.timeloc, 1, False, [ctime, 0.0, 0.0, ctime])
         for varIndex, varValue in self.fractalSettings.vars.items():
-            glUniformMatrix2fv(varIndex + 1, 1, False, [varValue,0.0,0.0,varValue])
+           glUniformMatrix2fv(self.varloc[varIndex], 1, False, [varValue,0.0,0.0,varValue])
         glVertexAttrib4f(1,self.fractalSettings.center[0], self.fractalSettings.center[1], self.fractalSettings.scale, wh)
         glBegin(GL_TRIANGLE_FAN)
         glVertex2f(-1, -1)
@@ -114,7 +114,9 @@ class GLFractalWindow:
         glAttachShader(self.shaderProgram, self.shaderVertex)
         glAttachShader(self.shaderProgram, self.shaderFragment)
 
-        self.positionAttributeLocation = 4
+        
+        
+
         glLinkProgram(self.shaderProgram)
 
         if glGetProgramiv(self.shaderProgram, GL_LINK_STATUS) != GL_TRUE:
@@ -122,6 +124,9 @@ class GLFractalWindow:
             print(glGetProgramInfoLog(self.shaderProgram))
         glUseProgram(self.shaderProgram)
         
+        self.timeloc = glGetUniformLocation(self.shaderProgram, "time")
+        self.varloc = {varIndex : glGetUniformLocation(self.shaderProgram, f"xname{varIndex}") for varIndex, value in self.fractalSettings.vars.items()}
+
         glutSpecialFunc(self.__glutSpecialKeyHandler)
         glutDisplayFunc(self.__glDraw)
         glutIdleFunc(self.__glDraw)
@@ -138,18 +143,15 @@ class GLFractalRenderer:
     def __createWindow(self):
         self.__init_subclass__window = GLFractalWindow(self.settingView, self.fractal)
 
-    def __init__(self):
-        proc = DefaultExpressionProcessor()
-        self.fractal = Fractal(proc.getParsedExpression("time * c * x * x   + pos "), 2.0, 100.0)
-        
-        self.root = tk.Tk()
+    def __init__(self,root,fractal):
+        self.fractal = fractal
+        self.root = root
         self.settingView = FractalSettingWindow(self.root, self.fractal)
 
         self.glutMainLoopThread = Thread()
         self.glutMainLoopThread.run = self.__createWindow
         self.glutMainLoopThread.start()
 
-        self.root.mainloop()
         
         
 
