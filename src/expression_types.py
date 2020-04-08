@@ -79,6 +79,7 @@ class MultiplyExpr(AssociativeBinaryExpr):
     priority = 1
 
 
+
 class SumExpr(AssociativeBinaryExpr):
     symbol = "+"
 
@@ -120,6 +121,7 @@ class NamedVarExpr(Expression):
     def getNiceString(self):
         return self.identifierName
 
+
 class SpecialVarExpr(Expression):
     valence = 0
     needsSubLinking = False
@@ -133,7 +135,7 @@ class SpecialVarExpr(Expression):
         return self.identifierName
 
 class NamedVarFactory:
-    keywords = ["pos", "x"]
+    keywords = ["pos", "x", "time"]
     def getVarByName(self, name):
         if name in self.keywords:
             return SpecialVarExpr(name)

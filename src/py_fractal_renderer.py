@@ -7,6 +7,7 @@ from fractal import Fractal
 from expression_processor import DefaultExpressionProcessor
 from copy import copy, deepcopy
 from py_fractal_source_generator import PyFractalSourceGenerator
+import time
 
 class PyFractalDivergenceCalculator:
     def __init__(self, fractal):
@@ -20,7 +21,7 @@ class PyFractalDivergenceCalculator:
     def getDivergence(self, pos):
         val = 0 + 0j
         for i in range(self.iters):
-            val = self.iteration(val, pos, self.vars)
+            val = self.iteration(val, pos, self.vars, self.time )
             if abs(val) > self.radius:
                 return i
         return -1
@@ -31,6 +32,7 @@ class PyColorProvider:
     blue = 0
     
     def __init__(self, fractal):
+        
         self.calculator = PyFractalDivergenceCalculator(fractal)
 
     def posToComplex(self, position):
@@ -68,6 +70,7 @@ class PyFractalWindow:
     size = (200,200)
     def __init__(self, root, settingsView):
         self.settingsView = settingsView
+        #self.initTime = time.time()
         self.window = tk.Toplevel(root)
         self.window.title("Py Fractal Renderer")
         self.canvas = tk.Canvas(self.window,width=self.size[0], height=self.size[1], bg = 'black')
@@ -76,6 +79,7 @@ class PyFractalWindow:
         self.buffers[0].setVisibility(True)
         self.canvas.bind("<Configure>",self.cvSizeChanged)
         self.window.bind("<Key>", self.settingsView.tkinterKeyPressedCallback)
+        
 
     def cvSizeChanged(self, event):
         self.size = (event.width, event.height)
@@ -102,11 +106,14 @@ class PyFractalWindow:
         colorProvider.height = self.size[1]
         colorProvider.posToComplex = self.getLocator()
         colorProvider.calculator.setVars(self.settingsView.params.vars) 
-        
+     #   colorProvider.time = float(time.time() - self.initTime)
+
         self.buffers = self.buffers[1], self.buffers[0]
         self.buffers[0].render(colorProvider)
         self.buffers[1].setVisibility(False)
         self.buffers[0].setVisibility(True)
+        
+       
 
 class PyFractalRenderer:
     drawFlag = True

@@ -1,21 +1,9 @@
 from fractal import Fractal
 from expression_types import *
 from expression_processor import *
+from ifractal_source_generator import *
 
-class PyFractalSourceGenerator:
-    source = []
-    margin = 0
-
-    def addMargin(self):
-        self.margin += 4
-    
-    def removeMargin(self):
-        self.margin -= 4
-
-    def addToSource(self, string):
-        self.source.append(" " * self.margin + string)
-    
-
+class PyFractalSourceGenerator(IFractalSourceGenerator):
     def getName(self, expr):
         if isinstance(expr, NamedVarExpr):
             return f"name[{self.fractal.identifiers[expr.identifierName]}]"
@@ -43,15 +31,12 @@ class PyFractalSourceGenerator:
 
     def generateSource(self, fractal):
         self.fractal = fractal
-        self.addToSource("def iterationFractal(x, pos, name):")
+        self.addToSource("def iterationFractal(x, pos, name, time):")
         self.addMargin()
         for operation in fractal.postOrder:
             self.addOperation(operation.link)   
-        self.addToSource("return oper0")
+        self.addToSource(f"return {self.getName(fractal.expression.link)}")
         self.removeMargin()
-        
-    def printSource(self):
-        print("\n".join(self.source))
     
     def defineGlobalIterationFunction(self, scope):
         exec("\n".join(self.source), scope)
@@ -65,6 +50,6 @@ if __name__ == "__main__":
     gen.generateSource(fract)
     gen.printSource()
     gen.defineGlobalIterationFunction(globals())
-    print(iterationFractal(2,2))
+    print(iterationFractal(2,2,{}))
     
 
