@@ -1,13 +1,13 @@
 import tkinter as tk
 
 class FractalSettings:
-    center = (0,0)
-    scale = 4.0
+    
     def __init__(self, varcount):
+        self.center = (0,0)
+        self.scale = 4.0
         self.vars = {x : 0.0 for x in range(varcount)}
 
 class FractalSettingWindow:
-    params = FractalSettings(10)
 
     def tkinterKeyPressedCallback(self, event):
         key = event.keysym
@@ -62,6 +62,7 @@ class FractalSettingWindow:
         self.__settingExternalCallback()
 
     def __init__(self, root, fractal):
+        self.params = FractalSettings(10)
         self.fractal = fractal
         
         self.window = tk.Toplevel(root)

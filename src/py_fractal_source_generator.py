@@ -21,6 +21,8 @@ class PyFractalSourceGenerator:
             return f"name_{self.fractal.identifiers[expr.identifierName]}"
         if isinstance(expr, SpecialVarExpr):
             return expr.identifierName
+        if isinstance(expr, ConstantExpr):
+            return str(expr.value)
         return f"oper{expr.operIndex}"
     
     def addOperation(self, expr):
@@ -53,6 +55,7 @@ class PyFractalSourceGenerator:
     
     def defineGlobalIterationFunction(self, scope):
         exec("\n".join(self.source), scope)
+        self.printSource()
         
 
 if __name__ == "__main__":

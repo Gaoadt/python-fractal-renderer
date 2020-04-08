@@ -4,15 +4,30 @@ from expression_types import Expression
 from fractal_data import FractalData
 from fractal import Fractal
 from fractal_settings_window import FractalSettingWindow
+from py_fractal_renderer import PyFractalRenderer
+import sys
+import os
+import threading
 
 class MainWindow:
     fractal_data = FractalData()
-
+    renderer = None
     def __setFieldForeground(self, field, valid):
         if valid:
             field.config(foreground = 'black')
         else:
             field.config(foreground = 'tomato')
+    
+    def __killSubwindows(self,*args):
+        
+        if self.renderer is not None:
+            self.renderer.killAll()
+    
+    exited = False
+    def __exit(self, *args):
+        if not self.exited:
+            self.exited = True
+            self.__killSubwindows()
 
     def __dataChangedQuickCallback(self, *args):
         self.fractal_data.setFormula(self.formula_string_var.get())
@@ -37,8 +52,12 @@ class MainWindow:
         if not self.fractal_data.isValid():
             return
         
+        
+        self.__killSubwindows()
+
         fractal = Fractal(self.fractal_data.getExpression(), self.fractal_data.getRadius(), self.fractal_data.getIterations())
-        settings = FractalSettingWindow(self.root, fractal)
+        self.renderer = PyFractalRenderer(self.root, fractal)
+        self.renderer.runDrawThread()
         
 
     def __init__(self):
@@ -93,6 +112,7 @@ class MainWindow:
         self.render_button.bind("<Button-1>", self.__renderButtonCallback)
         self.main_frame.pack()
         self.root.resizable(False, False)
+        self.root.bind("<Destroy>", self.__exit)
         self.root.mainloop()
 
 

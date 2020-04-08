@@ -2,12 +2,14 @@ from expression_processor import ExpressionLink
 from expression_types import NamedVarExpr
 
 class Fractal:
-    expression = ExpressionLink()
-    identifiers = None
-    operIndex = 0
-    postOrder = []
+   
+    
 
     def __init__(self, expression, radius, iterations):
+        self.postOrder = []
+        self.expression = ExpressionLink()
+        self.identifiers = None
+        self.operIndex = 0
         self.expression.link = expression
         self.radius = radius
         self.iterations = iterations

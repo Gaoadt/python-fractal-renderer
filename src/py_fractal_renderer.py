@@ -7,6 +7,7 @@ from fractal import Fractal
 from expression_processor import DefaultExpressionProcessor
 from copy import copy, deepcopy
 from py_fractal_source_generator import PyFractalSourceGenerator
+
 class PyFractalDivergenceCalculator:
     def __init__(self, fractal):
         self.iteration = iterationFractal
@@ -104,37 +105,64 @@ class PyFractalWindow:
         self.buffers[0].setVisibility(True)
 
 class PyFractalRenderer:
-    def __init__(self, fractal):
+    drawFlag = True
+    
+    def __init__(self, root, fractal):
         self.fractal = fractal
-       ## self.colorProvider = PyColorProvider()
- 
-global image
-def run():
-    global win
-    cp = PyColorProvider(fractal)
-    cp.width = 1968
-    cp.height = 1024
-    for i in range(11500):
-         win.renderFractal(cp)
-         cp.blue += 1
-         cp.blue %= 256
+        self.root = root
+        self.generator = PyFractalSourceGenerator()
+        self.generator.generateSource(fractal)
+        self.generator.defineGlobalIterationFunction(globals())
+        self.setting = FractalSettingWindow(root, fractal)
+        
+        self.win = PyFractalWindow(root, self.setting)
+        
+        self.win.window.bind("<Destroy>", self.killAll)
+        self.setting.window.bind("<Destroy>",self.killAll)
 
-global win
+        self.colorProvider = PyColorProvider(fractal)
+    
+    def runDrawThread(self):
+        thread = Thread()
+        thread.run = self.__drawLoop
+        thread.start()
+        self.drawThread = thread
+    
+    def __drawLoop(self):
+        while self.drawFlag:
+            try:
+                self.win.renderFractal(self.colorProvider)
+            except Exception:
+                pass
+    
+    def __kill(self):
+        self.drawFlag = False
+        if(self.drawThread.daemon):   
+            self.drawThread.join()  
+        try:
+            self.setting.window.destroy()
+        except Exception:
+            pass
+        
+        try:
+            self.win.window.destroy()
+        except Exception:
+            pass
+
+    def killAll(self, *args):
+        thread = Thread()
+        thread.run = self.__kill
+        thread.start()
+        self.killThread = thread
+        
+
 if __name__ == '__main__':
-
-
-
-    root = tk.Tk()
     proc = DefaultExpressionProcessor()
     fractal = Fractal(proc.getParsedExpression("x * x * x + pos"), 2.0, 100)
-
-    generator = PyFractalSourceGenerator()
-    generator.generateSource(fractal)
-    generator.defineGlobalIterationFunction(globals())
-
-    setting = FractalSettingWindow(root, fractal)
-    win = PyFractalWindow(root,setting)
-    thread = Thread()
-    thread.run = run
-    thread.start()
+     
+    root = tk.Tk()
+    renderer = PyFractalRenderer(root,fractal)
+    renderer.runDrawThread()
     root.mainloop()
+  
+    
