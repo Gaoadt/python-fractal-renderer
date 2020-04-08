@@ -6,14 +6,17 @@ from fractal_settings_window import FractalSettingWindow
 from fractal import Fractal
 from expression_processor import DefaultExpressionProcessor
 from copy import copy, deepcopy
-
+from py_fractal_source_generator import PyFractalSourceGenerator
 class PyFractalDivergenceCalculator:
-    iters = 100
-    radius = 2.0
+    def __init__(self, fractal):
+        self.iteration = iterationFractal
+        self.iters = fractal.iterations
+        self.radius = fractal.radius
+
     def getDivergence(self, pos):
         val = 0 + 0j
         for i in range(self.iters):
-            val = val * val + pos
+            val = self.iteration(val, pos)
             if abs(val) > self.radius:
                 return i
         return -1
@@ -22,7 +25,9 @@ class PyColorProvider:
     width = 100
     height = 100
     blue = 0
-    calculator = PyFractalDivergenceCalculator()
+    
+    def __init__(self, fractal):
+        self.calculator = PyFractalDivergenceCalculator(fractal)
 
     def posToComplex(self, position):
         return 0 + 0j
@@ -67,7 +72,6 @@ class PyFractalWindow:
         self.buffers[0].setVisibility(True)
         self.canvas.bind("<Configure>",self.cvSizeChanged)
         self.window.bind("<Key>", self.settingsView.tkinterKeyPressedCallback)
-        print("Binded")
 
     def cvSizeChanged(self, event):
         self.size = (event.width, event.height)
@@ -102,12 +106,12 @@ class PyFractalWindow:
 class PyFractalRenderer:
     def __init__(self, fractal):
         self.fractal = fractal
-        self.colorProvider = PyColorProvider()
+       ## self.colorProvider = PyColorProvider()
  
 global image
 def run():
     global win
-    cp = PyColorProvider()
+    cp = PyColorProvider(fractal)
     cp.width = 1968
     cp.height = 1024
     for i in range(11500):
@@ -117,9 +121,17 @@ def run():
 
 global win
 if __name__ == '__main__':
+
+
+
     root = tk.Tk()
     proc = DefaultExpressionProcessor()
-    fractal = Fractal(proc.getParsedExpression("x*x + pos"), 2.0, 100)
+    fractal = Fractal(proc.getParsedExpression("x * x * x + pos"), 2.0, 100)
+
+    generator = PyFractalSourceGenerator()
+    generator.generateSource(fractal)
+    generator.defineGlobalIterationFunction(globals())
+
     setting = FractalSettingWindow(root, fractal)
     win = PyFractalWindow(root,setting)
     thread = Thread()

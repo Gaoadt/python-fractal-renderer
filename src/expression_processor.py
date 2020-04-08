@@ -14,6 +14,7 @@ class DefaultExpressionProcessor(IExpressionProcessor):
     
     unaryOperations = [UnaryPlus(), UnaryMinus()]
     binaryOperations = [SumExpr(), DivideExpr(), MultiplyExpr(), SubtractExpr(), PowerExpr()]
+    nameFactory = NamedVarFactory()
 
     def __currentCharacter(self):
         return self.__expressionWithoutSpaces[self.__index]
@@ -109,7 +110,7 @@ class DefaultExpressionProcessor(IExpressionProcessor):
 
         varConstant = None
         if identifier != "":
-            varConstant = NamedVarExpr(identifier)
+            varConstant = self.nameFactory.getVarByName(identifier)
         
         if(self.__isNextBracketInfixExpr()):
             if(varConstant == None):

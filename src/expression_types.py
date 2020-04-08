@@ -12,6 +12,7 @@ class ExpressionLink:
 class Expression(IExpression):
     symbol =''
     valence = 0
+    operIndex = -1
 
     def setArgs(self, *args):
         for i in range(self.valence):
@@ -118,6 +119,26 @@ class NamedVarExpr(Expression):
         return self.identifierName
     def getNiceString(self):
         return self.identifierName
+
+class SpecialVarExpr(Expression):
+    valence = 0
+    needsSubLinking = False
+    priority = 100
+    args = []
+    def __init__(self, identifierName):
+        self.identifierName = identifierName
+    def print(self):
+        return self.identifierName
+    def getNiceString(self):
+        return self.identifierName
+
+class NamedVarFactory:
+    keywords = ["pos", "x"]
+    def getVarByName(self, name):
+        if name in self.keywords:
+            return SpecialVarExpr(name)
+        else:
+            return NamedVarExpr(name)
 
 class UnaryMinus(UnaryExpr):
     priority = 50
