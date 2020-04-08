@@ -2,6 +2,10 @@ import tkinter as tk
 from PIL import Image, ImageDraw, ImageTk
 import time
 from threading import Thread
+from fractal_settings_window import FractalSettingWindow
+from fractal import Fractal
+from expression_processor import DefaultExpressionProcessor
+from copy import copy, deepcopy
 
 class PyFractalDivergenceCalculator:
     iters = 100
@@ -53,7 +57,8 @@ class PyFractalWindowBuffer:
 
 class PyFractalWindow:
     size = (200,200)
-    def __init__(self, root):
+    def __init__(self, root, settingsView):
+        self.settingsView = settingsView
         self.window = tk.Toplevel(root)
         self.window.title("Py Fractal Renderer")
         self.canvas = tk.Canvas(self.window,width=self.size[0], height=self.size[1], bg = 'black')
@@ -61,19 +66,27 @@ class PyFractalWindow:
         self.canvas.pack(expand=tk.YES, fill=tk.BOTH)
         self.buffers[0].setVisibility(True)
         self.canvas.bind("<Configure>",self.cvSizeChanged)
-    
+        self.window.bind("<Key>", self.settingsView.tkinterKeyPressedCallback)
+        print("Binded")
+
     def cvSizeChanged(self, event):
         self.size = (event.width, event.height)
 
     def getLocator(self):
         width = self.size[0] * 1.0
         height = self.size[1] * 1.0
+        center = copy(self.settingsView.params.center)
+        scale = copy(self.settingsView.params.scale)
+
+
         def locator(position):
             nonlocal width
             nonlocal height
-            scale = 4.0
+            nonlocal center
+            nonlocal scale
+
             
-            return (position[0] - width/2) / height * scale+ (position[1] - height/2) / height * scale *1j
+            return (position[0] - width / 2) / height * scale + center[0] + ((height/2 - position[1]) / height * scale + center[1])* 1j
         return locator
 
     def renderFractal(self, colorProvider):
@@ -97,16 +110,18 @@ def run():
     cp = PyColorProvider()
     cp.width = 1968
     cp.height = 1024
-    for i in range(500):
+    for i in range(11500):
          win.renderFractal(cp)
          cp.blue += 1
          cp.blue %= 256
-         print(i)
 
 global win
 if __name__ == '__main__':
     root = tk.Tk()
-    win = PyFractalWindow(root)
+    proc = DefaultExpressionProcessor()
+    fractal = Fractal(proc.getParsedExpression("x*x + pos"), 2.0, 100)
+    setting = FractalSettingWindow(root, fractal)
+    win = PyFractalWindow(root,setting)
     thread = Thread()
     thread.run = run
     thread.start()
