@@ -1,16 +1,18 @@
 from abc import abstractclassmethod
 from copy import deepcopy
 
+
 class IExpression:
     @abstractclassmethod
     def getNiceString(self):
         pass
 
+
 class ExpressionLink:
     link = None
 
 class Expression(IExpression):
-    symbol =''
+    symbol = ''
     valence = 0
     operIndex = -1
 
