@@ -1,6 +1,8 @@
 from abc import abstractclassmethod
 from copy import copy, deepcopy
-from expression_types import *
+from expression_types import UnaryExprFactory, BinaryExprFactory,\
+                             NamedVarFactory, ConstantExprFactory
+
 import sys
 import expression_exceptions as exceptions
 
@@ -13,10 +15,11 @@ class IExpressionProcessor:
 
 class DefaultExpressionProcessor(IExpressionProcessor):
 
-    unaryOperations = [UnaryPlus(), UnaryMinus()]
-    binaryOperations = [SumExpr(), DivideExpr(), MultiplyExpr(),
-                        SubtractExpr(), PowerExpr()]
+    unaryFactory = UnaryExprFactory()
+    binaryFactory = BinaryExprFactory()
     nameFactory = NamedVarFactory()
+    constantFactory = ConstantExprFactory()
+
     float_symbols = "0123456789."
     bracket_symbols = ["()", "[]"]
 
@@ -30,11 +33,10 @@ class DefaultExpressionProcessor(IExpressionProcessor):
         self.__index += 1
 
     def __cutUnary(self):
-        for operation in self.unaryOperations:
-            if self.__currentCharacter() == operation.symbol:
-                self.__incrementIndex()
-                return deepcopy(operation).setArg(self.__getInfixExpression())
-        return None
+        expression = self.unaryFactory.getExpression(self.__currentCharacter())
+        if expression is not None:
+            self.__incrementIndex()
+        return expression
 
     def __isFloatConstantSymbol(self):
         return (not self.__isOver()) and self.__currentIn(self.float_symbols)
@@ -49,7 +51,7 @@ class DefaultExpressionProcessor(IExpressionProcessor):
 
     def __isBracket(self, index, returnIndex):
         for symbol in self.bracket_symbols:
-            if self.__currentCharacter == symbol[index]:
+            if self.__currentCharacter() == symbol[index]:
                 return symbol[returnIndex]
         return None
 
@@ -81,7 +83,7 @@ class DefaultExpressionProcessor(IExpressionProcessor):
             self.__incrementIndex()
         try:
             floatConstant = float(strConstant)
-            return ConstantExpr(floatConstant)
+            return self.constantFactory.getExpression(floatConstant)
         except ValueError:
             raise exceptions.InvalidConstantException(self.__index)
 
@@ -92,71 +94,70 @@ class DefaultExpressionProcessor(IExpressionProcessor):
         return self.__isOver() or self.__isSecondBracket() is not None
 
     def __isBinaryOperatorNext(self):
-        for operation in self.binaryOperations:
-            if operation.symbol == self.__currentCharacter():
-                return True
-        return False
+        typ_ = self.binaryFactory.getExpressionType(self.__currentCharacter())
+        return typ_ is not None
 
     def __isNextBracketInfixExpr(self):
         if not self.__isOver():
             return self.__isFirstBracket() is not None
         return False
 
+    def __isInfixContinuationNext(self):
+        if self.__isNextBracketInfixExpr():
+            return True
+        if self.__isSubexprEnd():
+            return False
+        return not self.__isBinaryOperatorNext()
+
     def __getInfixExpression(self):
         if(self.__isSubexprEnd()):
             raise exceptions.UnfinishedExpressionException(self.__index)
-        bracketsCutResult = self.__cutBrackets()
-        if(bracketsCutResult is not None):
-            if self.__isNextBracketInfixExpr():
-                return deepcopy(MultiplyExpr()).setArgs(bracketsCutResult, self.__getInfixExpression())
-            if not self.__isSubexprEnd():
-                if not self.__isBinaryOperatorNext():
-                    return deepcopy(MultiplyExpr()).setArgs(bracketsCutResult, self.__getInfixExpression())
-            return bracketsCutResult
+
+        brCutResult = self.__cutBrackets()
+        if(brCutResult is not None):
+            if self.__isInfixContinuationNext():
+                nxt = self.__getInfixExpression()
+                return self.binaryFactory.makeMultiplication(brCutResult, nxt)
+            return brCutResult
+
         unaryCutResult = self.__cutUnary()
         if(unaryCutResult is not None):
             return unaryCutResult
+
         prefixConstant = self.__cutFloatConstant()
         identifier = ""
         while(self.__isIdentifierSymbol()):
             identifier += self.__currentCharacter()
-            self.__index += 1
+            self.__incrementIndex()
         varConstant = None
         if identifier != "":
             varConstant = self.nameFactory.getVarByName(identifier)
+
+        resultExprs = [prefixConstant, varConstant]
         if(self.__isNextBracketInfixExpr()):
-            if(varConstant is None):
-                varConstant = self.__getInfixExpression()
-            else:
-                varConstant = deepcopy(MultiplyExpr()).setArgs(varConstant, self.__getInfixExpression())
-        if prefixConstant is None:
-            if varConstant is None:
-                raise exceptions.UnfinishedExpressionException(self.__index)
-            else:
-                return varConstant
-        else:
-            if varConstant == None:
-                return prefixConstant
-            else:
-                return deepcopy(MultiplyExpr()).setArgs(prefixConstant, varConstant)
+            resultExprs.append(self.__getInfixExpression())
+
+        expression = self.binaryFactory.makeMultiplication(*resultExprs)
+        if expression is None:
+            raise exceptions.UnfinishedExpressionException(self.__index)
+        return expression
 
     def __getPairingSymbol(self):
-        for operation in self.binaryOperations:
-            if operation.symbol == self.__currentCharacter():
-                self.__index += 1
-                resOper = deepcopy(operation)
-                resOper.needsSubLinking = True
-                return resOper
-        raise exceptions.UnfinishedExpressionException(self.__index)
-    
+        expr = self.binaryFactory.getExpression(self.__currentCharacter())
+        if expr is None:
+            raise exceptions.UnfinishedExpressionException(self.__index)
+        self.__incrementIndex()
+        expr.needsSubLinking = True
+        return expr
+
     def __subLinkList(self, subResult):
         if(self.__subListIndex >= len(subResult)):
             raise exceptions.UnfinishedExpressionException(self.__index)
         currentExpression = subResult[self.__subListIndex]
         self.__subListIndex += 1
         if currentExpression.needsSubLinking:
-            for i in range(currentExpression.valence):
-                currentExpression.args[currentExpression.valence - 1 - i].link = self.__subLinkList(subResult)
+            for i in range(currentExpression.valence - 1, -1, -1):
+                currentExpression.args[i].link = self.__subLinkList(subResult)
             currentExpression.needsSubLinking = False
         return currentExpression
 
@@ -171,26 +172,22 @@ class DefaultExpressionProcessor(IExpressionProcessor):
             if(self.__isSubexprEnd()):
                 break
             pairingSymbol = self.__getPairingSymbol()
-            
+
             while len(subStack) != 0:
                 if subStack[-1].priority < pairingSymbol.priority:
                     break
                 subResult.append(subStack.pop())
-               
+
             subStack.append(pairingSymbol)
-        
+
         while(len(subStack) != 0):
             subResult.append(subStack.pop())
 
         if(len(subResult) % 2 == 0):
             raise exceptions.UnfinishedExpressionException(self.__index)
-        
+
         self.__subListIndex = 0
         return self.__subLinkList(subResult[::-1])
-        
-
-            
-
 
     def getParsedExpression(self, expressionString):
         self.__expressionWithoutSpaces = ''.join(expressionString.split(' '))
@@ -200,16 +197,11 @@ class DefaultExpressionProcessor(IExpressionProcessor):
         if not self.__isOver():
             raise exceptions.UnexpectedSymbolException(self.__index)
         return expression
-    
-    def isParseable(self, string):
-        try:
-            self.getParsedExpression(string)
-            return True
-        except exceptions.InvalidExpressionException:
-            return False
 
 
 if __name__ == '__main__':
     string = input()
     processor = DefaultExpressionProcessor()
-    print(processor.getParsedExpression(string).print())
+    ex = processor.getParsedExpression(string)
+    print(ex.getNiceString())
+    print(ex.print())

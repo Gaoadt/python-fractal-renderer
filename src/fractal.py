@@ -1,9 +1,7 @@
-from expression_processor import ExpressionLink
-from expression_types import NamedVarExpr
+from expression_types import NamedVarExpr, ExpressionLink
+
 
 class Fractal:
-   
-    
 
     def __init__(self, expression, radius, iterations):
         self.postOrder = []
@@ -13,8 +11,10 @@ class Fractal:
         self.expression.link = expression
         self.radius = radius
         self.iterations = iterations
-        
         self.buildIdentifierDictionary()
+
+    def putIdentifier(self, expression):
+        self.identifiers[expression.identifierName] = len(self.identifiers)
 
     def dfsIdentifierFinder(self, nodeLink):
         expression = nodeLink.link
@@ -23,10 +23,10 @@ class Fractal:
 
         if isinstance(expression, NamedVarExpr):
             if expression.identifierName not in self.identifiers.keys():
-                self.identifiers[expression.identifierName] = len(self.identifiers)
+                self.putIdentifier(expression)
         for x in expression.args:
             self.dfsIdentifierFinder(x)
-        
+
         self.postOrder.append(nodeLink)
 
     def buildIdentifierDictionary(self):

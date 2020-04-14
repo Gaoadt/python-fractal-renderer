@@ -1,33 +1,33 @@
 from fractal import Fractal
-from expression_types import *
-from expression_processor import *
-from ifractal_source_generator import *
+from ifractal_source_generator import IFractalSourceGenerator
 
-class GLFractalSourceGenerator(IFractalSourceGenerator):    
-    def getName(self, expr):
-        if isinstance(expr, NamedVarExpr):
-            return f"xname{self.fractal.identifiers[expr.identifierName]}"
-        if isinstance(expr, SpecialVarExpr):
-            return expr.identifierName
-        if isinstance(expr, ConstantExpr):
-            return f"toComplex({str(float(expr.value))})"
-        return f"oper{expr.operIndex}"
-    
-    def addOperation(self, expr):
-        result = f"mat2 {self.getName(expr)} = "
-        if isinstance(expr, SpecialVarExpr):
-            return
-        elif isinstance(expr, ConstantExpr):
-            return
-        elif isinstance(expr, NamedVarExpr):
-            return
-        elif isinstance(expr, UnaryExpr):
-            result += expr.symbol + self.getName(expr.args[0].link)
-        elif isinstance(expr, PowerExpr):
-            raise RuntimeError("Rewrite expression without ^. GLSL doesn't have builtin raising to complex power, maybe our implementation of this operation will be aded later")
-        elif isinstance(expr, BinaryExpr):
-            result += f"{self.getName(expr.args[0].link)} {expr.symbol} {self.getName(expr.args[1].link)}"
-        self.addToSource(result + ";")
+
+class GLFractalSourceGenerator(IFractalSourceGenerator):
+    def getNameConstant(self, expr):
+        return f"toComplex({str(float(expr.value))})"
+
+    def getNameVar(self, expr):
+        return f"xname{self.fractal.identifiers[expr.identifierName]}"
+
+    def addPowerExpression(self, expression):
+        raise RuntimeError("""Rewrite expression without ^. 
+                                  GLSL doesn't have builtin raising to complex
+                                  power, maybe our implementation of this 
+                                  operation will be aded later""")
+
+    def addBreakCondition(self):
+        fractal = self.fractal
+        valSqr = "x[0][0] * x[0][0] + x[0][1] * x[0][1]"
+        radSqr = str(float(fractal.radius * fractal.radius))
+        self.addToSource(f"if({valSqr} >= {radSqr}) {'{'}")
+
+    def addForLoop(self):
+        fractal = self.fractal
+        iStr = str(int(fractal.iterations))
+        self.addToSource(f"for(int i = 0; i < {iStr}; ++i) {'{'}")
+
+    def addAssignment(self, rvalue, expr):
+        self.addToSource("mat2 "+self.getName(expr) + " = " + rvalue+";")
 
     def generateSource(self, fractal):
         self.fractal = fractal
@@ -54,7 +54,7 @@ class GLFractalSourceGenerator(IFractalSourceGenerator):
         self.addToSource("mat2 iteration(mat2 x) {")
         self.addMargin()
         for operation in fractal.postOrder:
-            self.addOperation(operation.link)   
+            operation.link.addToSource(self)
         self.addToSource(f"return {self.getName(fractal.expression.link)};")
         self.removeMargin()
         self.addToSource("}")
@@ -63,10 +63,10 @@ class GLFractalSourceGenerator(IFractalSourceGenerator):
         self.addMargin()
         self.addToSource("mat2 x = mat2(0.0,0.0,0.0,0.0);")
         self.addToSource("int result = -1;")
-        self.addToSource(f"for(int i = 0; i < {str(int(fractal.iterations))}; ++i) {'{'}")
+        self.addForLoop()
         self.addMargin()
         self.addToSource("x = iteration(x);")
-        self.addToSource(f"if(x[0][0] * x[0][0] + x[0][1] * x[0][1] >= {str(float(fractal.radius * fractal.radius))}) {'{'}")
+        self.addBreakCondition()
         self.addMargin()
         self.addToSource("result = i;")
         self.addToSource("break;")
@@ -85,17 +85,12 @@ class GLFractalSourceGenerator(IFractalSourceGenerator):
         self.addToSource("}")
         self.removeMargin()
         self.addToSource("}")
-        
-    def defineGlobalIterationFunction(self, scope):
-        exec("\n".join(self.source), scope)
-        self.printSource()
-        
+
 
 if __name__ == "__main__":
+    from expression_processor import DefaultExpressionProcessor
     proc = DefaultExpressionProcessor()
     fract = Fractal(proc.getParsedExpression("x * x + pos"), 2.0, 100.0)
-    gen  = GLFractalSourceGenerator()
+    gen = GLFractalSourceGenerator()
     gen.generateSource(fract)
     gen.printSource()
-    
-
