@@ -21,15 +21,22 @@ class PyFractalSourceGenerator(IFractalSourceGenerator):
         self.addToSource(f"return {self.getName(fractal.expression.link)}")
         self.removeMargin()
 
+    def addPowerExpression(self, expr):
+        names = self.getArgNames(expr)
+        result = f"{names[0]} ** {names[1]}"
+        self.addAssignment(result, expr)
+
     def defineGlobalIterationFunction(self, scope):
         exec("\n".join(self.source), scope)
         self.printSource()
 
+
 if __name__ == "__main__":
+    from expression_processor import DefaultExpressionProcessor
     proc = DefaultExpressionProcessor()
     fract = Fractal(proc.getParsedExpression("x * x + pos + x"), 100, 2.0)
-    gen  = PyFractalSourceGenerator()
+    gen = PyFractalSourceGenerator()
     gen.generateSource(fract)
     gen.printSource()
     gen.defineGlobalIterationFunction(globals())
-    print(iterationFractal(2,2,{}, 0))
+    print(iterationFractal(2, 2, {}, 0))

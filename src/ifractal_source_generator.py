@@ -43,9 +43,7 @@ class IFractalSourceGenerator:
         self.addAssignment(result, expr)
 
     def addPowerExpression(self, expr):
-        names = self.getArgNames(expr)
-        result = f"{names[0]} ** {names[1]}"
-        self.addAssignment(result, expr)
+        self.addBinaryExpression(expr)
 
     def getNameOperation(self, expr):
         return f"oper{expr.operIndex}"

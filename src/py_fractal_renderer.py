@@ -1,13 +1,13 @@
 import tkinter as tk
-from PIL import Image, ImageDraw, ImageTk
 import time
+from copy import copy, deepcopy
 from threading import Thread
+from PIL import Image, ImageDraw, ImageTk
 from fractal_settings_window import FractalSettingWindow
 from fractal import Fractal
 from expression_processor import DefaultExpressionProcessor
-from copy import copy, deepcopy
 from py_fractal_source_generator import PyFractalSourceGenerator
-import time
+
 
 class PyFractalDivergenceCalculator:
     def __init__(self, fractal):
@@ -167,14 +167,11 @@ class PyFractalRenderer:
         thread.start()
         self.killThread = thread
         
-
 if __name__ == '__main__':
     proc = DefaultExpressionProcessor()
-    fractal = Fractal(proc.getParsedExpression("x * x * x + pos + time"), 2.0, 100)
-     
+    fractal = Fractal(proc.getParsedExpression("x * x * x + pos + time"),
+                      2.0, 100)
     root = tk.Tk()
-    renderer = PyFractalRenderer(root,fractal)
+    renderer = PyFractalRenderer(root, fractal)
     renderer.runDrawThread()
     root.mainloop()
-  
-    
