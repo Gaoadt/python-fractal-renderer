@@ -7,6 +7,7 @@ import OpenGL.GLUT as glut
 from gl_fractal_source_generator import GLFractalSourceGenerator
 from fractal_settings_window import FractalSettingWindow
 from threading import Thread
+from renderer_manager import IFractalRenderer
 
 
 class GLShaderCompilationError(Exception):
@@ -151,16 +152,24 @@ class GLFractalWindow:
         self.__glInit()
 
 
-class GLFractalRenderer:
+class GLFractalRenderer(IFractalRenderer):
     def __createWindow(self):
         args = [self.settingView, self.fractal]
-        self.__init_subclass__window = GLFractalWindow(*args)
+        self.window = GLFractalWindow(*args)
+
+    def __destroyCallback(self, *args):
+        self._callback()
 
     def __init__(self, root, fractal):
         self.fractal = fractal
         self.root = root
+        self._callback = None
         self.settingView = FractalSettingWindow(self.root, self.fractal)
 
+    def runDrawThread(self):
         self.glutMainLoopThread = Thread()
         self.glutMainLoopThread.run = self.__createWindow
         self.glutMainLoopThread.start()
+
+    def destroy(self):
+        glut.glutLeaveMainLoop()

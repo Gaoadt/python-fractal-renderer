@@ -1,4 +1,5 @@
 import tkinter as tk
+from labeled_entry import LabeledEntry
 
 
 class FractalSettings:
@@ -6,15 +7,6 @@ class FractalSettings:
         self.center = (0, 0)
         self.scale = 4.0
         self.vars = {x: 0.0 for x in range(varcount)}
-
-
-class LabeledEntry:
-    def __init__(self, root, labelText, entryDefault, callback):
-        self.Label = tk.Label(root, text=labelText)
-        self.Var = tk.StringVar()
-        self.Var.set(entryDefault)
-        self.Entry = tk.Entry(root, textvariable=self.Var)
-        self.Entry.bind("<FocusOut>", callback)
 
 
 class FractalSettingWindow:
@@ -67,7 +59,7 @@ class FractalSettingWindow:
                                               self.params.scale,
                                               float)
         for ind, le in self.ident.items():
-            self.params.vars[ind] = self.__tryCastVal(le.Var, 
+            self.params.vars[ind] = self.__tryCastVal(le.Var,
                                                       self.params.vars[ind],
                                                       float)
 
@@ -86,30 +78,29 @@ class FractalSettingWindow:
         }
 
         self.window = tk.Toplevel(root)
-        self.window.title(f"Fractal \"{fractal.expression.link.getNiceString()}\" data")
+        title = f"Fractal \"{fractal.expression.link.getNiceString()}\" data"
+        self.window.title(title)
 
         self.viewportPanel = tk.Frame(self.window)
-        self.viewportLabel = tk.Label(self.viewportPanel, text="Viewport Settings")
+        self.viewportLabel = tk.Label(self.viewportPanel, 
+                                      text="Viewport Settings")
         self.viewportLabel.grid(row=0, column=0, columnspan=4)
 
         self.viewportCenterReal = LabeledEntry(self.viewportPanel,
                                                "Centet X (Real): ", "0.0",
                                                self.__settingChangedCallback)
-        self.viewportCenterReal.Label.grid(row=1, column=0)
-        self.viewportCenterReal.Entry.grid(row=1, column=1)
+        self.viewportCenterReal.gridDefault(1,0)
 
         self.viewportCenterImag = LabeledEntry(self.viewportPanel,
                                                "Centet Y (Imag): ", "0.0",
                                                self.__settingChangedCallback)
-        self.viewportCenterImag.Label.grid(row=1, column=2)
-        self.viewportCenterImag.Entry.grid(row=1, column=3)
+        self.viewportCenterImag.gridDefault(1,2)
 
         self.viewportScale = LabeledEntry(self.viewportPanel,
                                           "Scale (length of height):",
                                           "1.0",
                                           self.__settingChangedCallback)
-        self.viewportScale.Label.grid(row=2, column=0)
-        self.viewportScale.Entry.grid(row=2, column=1)
+        self.viewportScale.gridDefault(2,0)
 
         self.viewportPanel.pack()
 
@@ -123,8 +114,7 @@ class FractalSettingWindow:
                                              f"[{name}] = ",
                                              "0.0",
                                              self.__settingChangedCallback)
-            self.ident[index].Label.grid(row=index, column=0)
-            self.ident[index].Entry.grid(row=index, column=1)
+            self.ident[index].gridDefault(index, 0)
         self.identPanel.pack()
         self.window.resizable(False, False)
         self.window.bind("<Key>", self.tkinterKeyPressedCallback)

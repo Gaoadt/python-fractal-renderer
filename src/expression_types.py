@@ -73,10 +73,10 @@ class BinaryExpr(Expression):
 
     def getArgNiceStringsWithBrackets(self):
         argStrs = self.getArgNiceStrings()
-        if(self.args[0].link.priority < self.priority):
+        if self.args[0].link.priority < self.priority:
             argStrs[0] = self.surroundByBrackets(argStrs[0])
 
-        if(self.args[1].link.priority <= self.priority):
+        if self.args[1].link.priority <= self.priority:
             argStrs[1] = self.surroundByBrackets(argStrs[1])
         return argStrs
 
@@ -91,10 +91,10 @@ class BinaryExpr(Expression):
 class AssociativeBinaryExpr(BinaryExpr):
     def getArgNiceStringsWithBrackets(self):
         argStrs = self.getArgNiceStrings()
-        if(self.args[0].link.priority < self.priority):
+        if self.args[0].link.priority < self.priority:
             argStrs[0] = self.surroundByBrackets(argStrs[0])
 
-        if(self.args[1].link.priority <= self.priority):
+        if self.args[1].link.priority <= self.priority:
             if self.args[1].link.priority == self.priority:
                 if isinstance(self, type(self.args[1].link)):
                     argStrs[1] = self.surroundByBrackets(argStrs[1])
