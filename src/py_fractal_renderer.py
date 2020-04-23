@@ -12,7 +12,7 @@ import tkinter as tk
 
 class PyFractalDivergenceCalculator:
     def __init__(self, fractal):
-        self.iteration = iterationFractal
+        self.iteration = globals()['iterationFractal']
         self.iters = fractal.iterations
         self.radius = fractal.radius
         self.time = 0.0

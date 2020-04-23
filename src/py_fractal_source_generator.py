@@ -39,4 +39,4 @@ if __name__ == "__main__":
     gen.generateSource(fract)
     gen.printSource()
     gen.defineGlobalIterationFunction(globals())
-    print(iterationFractal(2, 2, {}, 0))
+    print(globals()['iterationFractal'](2, 2, {}, 0))
