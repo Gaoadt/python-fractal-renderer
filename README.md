@@ -1,4 +1,5 @@
-# python-fractal-renderer
+# Python Fractal Renderer
+![Image description](docs/mandelbrot.png)
 ## Запуск
 Чтобы запустить программу нужно запустить main.py
 
